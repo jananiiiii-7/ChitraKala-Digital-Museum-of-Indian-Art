@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChitraKāla — Visual Matrix of Indian Art Heritage</title>
+    
+    <!-- Leaflet.js CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Marcellus & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b090e;
+            color: #f1f5f9;
+            overflow: hidden;
+        }
+
+        .font-serif-header {
+            font-family: 'Marcellus', Georgia, serif;
+        }
+
+        /* Leaflet Custom Warm Terracotta Dark Map Styling */
+        #leaflet-map {
+            width: 100%;
+            height: 100%;
+            background: #08060a;
+            z-index: 1;
+        }
+
+        .leaflet-container {
+            background-color: #08060a !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        .leaflet-tile {
+            filter: brightness(0.65) contrast(1.2) sepia(0.35) hue-rotate(325deg) saturate(0.85);
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: #140f1a !important;
+            color: #f8fafc !important;
+            border: 1px solid rgba(249, 115, 22, 0.5) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.95) !important;
+            padding: 2px !important;
+        }
+
+        .leaflet-popup-tip {
+            background: #140f1a !important;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b090e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #24192d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f97316;
+        }
+
+        /* Glassmorphism Cards */
+        .ks-card {
+            background: rgba(18, 14, 22, 0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(249, 115, 22, 0.15);
+        }
+
+        .ks-card-hover {
+            transition: all 0.25s ease;
+        }
+        .ks-card-hover:hover {
+            border-color: rgba(249, 115, 22, 0.5);
+            background: rgba(28, 20, 34, 0.95);
+        }
+
+        .active-site-item {
+            border-color: #f97316 !important;
+            background: rgba(249, 115, 22, 0.15) !important;
+        }
+
+        /* Category Filter Chips */
+        .chip-btn {
+            transition: all 0.2s ease;
+        }
+        .chip-btn.active-chip {
+            box-shadow: 0 0 12px rgba(249, 115, 22, 0.35);
+            border-color: #f97316;
+            color: #ffedd5;
+            background: rgba(249, 115, 22, 0.2);
+        }
+
+        /* Vertical Era Chrono-Rail */
+        .era-step-btn {
+            transition: all 0.25s ease;
+        }
+        .era-step-btn.active-era {
+            border-color: #f97316;
+            color: #ffedd5;
+            background: rgba(249, 115, 22, 0.2);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col justify-between antialiased selection:bg-orange-500/30 selection:text-orange-200">
+
+    <!-- Top Header Bar (Warm Obsidian & Terracotta Copper Accent) -->
+    <header class="h-16 px-6 border-b border-orange-950/60 bg-[#0e0a12] flex items-center justify-between shrink-0 z-30">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-orange-600 to-rose-600 flex items-center justify-center text-slate-950 font-bold shadow-lg shadow-orange-600/20">
+                <i class="fa-solid fa-palette text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-serif-header text-xl font-normal text-slate-100 tracking-wide flex items-center gap-2">
+                    CHITRAKĀLA
+                    <span class="text-[10px] font-sans font-medium px-2 py-0.5 rounded bg-orange-950/60 text-orange-300 border border-orange-500/40">Visual Matrix</span>
+                </h1>
+                <p class="text-[11px] text-orange-200/60 font-light hidden sm:block">Varna &amp; Rekha — 21 Masterpieces Across 14 States &amp; 10,000 Years of Heritage</p>
+            </div>
+        </div>
+
+        <!-- Header Controls & Search -->
+        <div class="flex items-center gap-4">
+            <!-- Global Search -->
+            <div class="relative w-48 sm:w-72">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-orange-400/60 text-xs"></i>
+                <input type="text" id="ks-search" onkeyup="applyFilters()" placeholder="Search site, medium, artist, state..." 
+                       class="w-full bg-[#16101c] border border-orange-900/40 text-xs text-slate-200 rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:border-orange-500/70 placeholder:text-orange-300/40 transition-colors">
+            </div>
+
+            <!-- Live Counter Badges -->
+            <div class="hidden md:flex items-center gap-3 text-xs bg-[#16101c] px-3.5 py-1.5 rounded-lg border border-orange-900/40 text-slate-400">
+                <div><b id="count-visible" class="text-orange-400 font-mono">21</b> <span class="text-[10px] text-orange-200/60">Masterpieces</span></div>
+                <div class="w-px h-3 bg-orange-900/60"></div>
+                <div><b class="text-slate-200 font-mono">14</b> <span class="text-[10px] text-orange-200/60">States</span></div>
+            </div>
+
+            <!-- Reset View Button -->
+            <button onclick="resetAllFilters()" class="px-3 py-1.5 bg-[#16101c] hover:bg-[#22182c] text-orange-200 border border-orange-900/40 text-xs rounded-lg flex items-center gap-1.5 transition-all cursor-pointer">
+                <i class="fa-solid fa-rotate-left text-orange-400 text-xs"></i>
+                <span class="hidden lg:inline text-xs">Reset View</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace (3-Column Layout: Left Rail | Center Map | Right Quick Facts Dossier) -->
+    <main class="flex-1 flex min-h-0 relative overflow-hidden">
+        
+        <!-- Left Sidebar: Vertical Era Chrono-Rail & Location Index (340px) -->
+        <aside class="w-80 md:w-88 border-r border-orange-950/60 bg-[#0e0a12] flex flex-col shrink-0 z-20">
+            
+            <!-- Category Chips & State Index Dropdown -->
+            <div class="p-3 border-b border-orange-950/40 space-y-2.5">
+                
+                <!-- Category Chips -->
+                <div>
+                    <span class="text-[10px] font-semibold text-orange-300/60 uppercase tracking-wider block mb-1.5">Art Form Practice</span>
+                    <div class="flex flex-wrap gap-1 text-[11px]" id="category-chips">
+                        <button onclick="setCategory('all', event)" class="chip-btn active-chip px-2 py-0.5 rounded bg-[#181120] border border-orange-900/50 text-slate-300">All</button>
+                        <button onclick="setCategory('rock', event)" class="chip-btn px-2 py-0.5 rounded bg-[#181120] border border-orange-900/40 text-orange-400 hover:border-orange-500/60">Rock &amp; Cave</button>
+                        <button onclick="setCategory('temple', event)" class="chip-btn px-2 py-0.5 rounded bg-[#181120] border border-orange-900/40 text-rose-400 hover:border-rose-500/60">Temple &amp; Wall</button>
+                        <button onclick="setCategory('miniature', event)" class="chip-btn px-2 py-0.5 rounded bg-[#181120] border border-orange-900/40 text-sky-400 hover:border-sky-500/60">Miniatures</button>
+                        <button onclick="setCategory('folk', event)" class="chip-btn px-2 py-0.5 rounded bg-[#181120] border border-orange-900/40 text-emerald-400 hover:border-emerald-500/60">Folk &amp; Tribal</button>
+                        <button onclick="setCategory('modern', event)" class="chip-btn px-2 py-0.5 rounded bg-[#181120] border border-orange-900/40 text-purple-400 hover:border-purple-500/60">Modern</button>
+                    </div>
+                </div>
+
+                <!-- State Index Filter -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] font-semibold text-orange-300/60 uppercase tracking-wider shrink-0">State Index:</span>
+                    <select id="state-index-select" onchange="applyFilters()" class="flex-1 bg-[#181120] border border-orange-900/40 text-xs text-orange-300 rounded px-2 py-1 focus:outline-none focus:border-orange-500/70 font-mono">
+                        <option value="all">All 14 States</option>
+                        <option value="Kerala">Kerala (1)</option>
+                        <option value="Madhya Pradesh">Madhya Pradesh (3)</option>
+                        <option value="Tamil Nadu">Tamil Nadu (3)</option>
+                        <option value="Rajasthan">Rajasthan (2)</option>
+                        <option value="West Bengal">West Bengal (2)</option>
+                        <option value="Maharashtra">Maharashtra (3)</option>
+                        <option value="Bihar">Bihar (1)</option>
+                        <option value="Odisha">Odisha (1)</option>
+                        <option value="Himachal Pradesh">Himachal Pradesh (1)</option>
+                        <option value="Uttar Pradesh">Uttar Pradesh (1)</option>
+                        <option value="Telangana">Telangana (1)</option>
+                        <option value="Andhra Pradesh">Andhra Pradesh (1)</option>
+                        <option value="Gujarat">Gujarat (1)</option>
+                        <option value="Karnataka">Karnataka (1)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Vertical Era Chrono-Rail Section -->
+            <div class="px-3 py-2 border-b border-orange-950/40 bg-[#0a070e]">
+                <span class="text-[10px] font-semibold text-orange-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
+                    <span>Vertical Chrono-Rail</span>
+                    <span id="active-era-lbl" class="text-orange-200/50 font-mono normal-case">All Eras</span>
+                </span>
+                
+                <div class="grid grid-cols-3 gap-1 text-[10px]">
+                    <button onclick="setEraFilter('all', event)" class="era-step-btn active-era py-1 px-1.5 rounded border border-orange-900/40 text-slate-300 text-center truncate">All Eras</button>
+                    <button onclick="setEraFilter('prehistoric', event)" class="era-step-btn py-1 px-1.5 rounded border border-orange-900/40 text-slate-400 text-center truncate" title="8000 BCE - 800 BCE">8000 BCE</button>
+                    <button onclick="setEraFilter('ancient', event)" class="era-step-btn py-1 px-1.5 rounded border border-orange-900/40 text-slate-400 text-center truncate" title="2nd BCE - 7th CE">Ancient Caves</button>
+                    <button onclick="setEraFilter('classical', event)" class="era-step-btn py-1 px-1.5 rounded border border-orange-900/40 text-slate-400 text-center truncate" title="9th - 15th CE">Classical</button>
+                    <button onclick="setEraFilter('imperial', event)" class="era-step-btn py-1 px-1.5 rounded border border-orange-900/40 text-slate-400 text-center truncate" title="16th - 18th CE">Imperial Peak</button>
+                    <button onclick="setEraFilter('modern', event)" class="era-step-btn py-1 px-1.5 rounded border border-orange-900/40 text-slate-400 text-center truncate" title="19th - 20th CE">Modern Masters</button>
+                </div>
+            </div>
+
+            <!-- Numbered Masterpiece Cards List -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-2" id="site-list-container">
+                <!-- Populated dynamically via JS -->
+            </div>
+        </aside>
+
+        <!-- Center Canvas: Dark Warm Terracotta OpenStreetMap View -->
+        <section class="flex-1 relative flex flex-col min-w-0">
+            <div id="leaflet-map"></div>
+
+            <!-- Map Overlay Controls & Legend -->
+            <div class="absolute top-4 left-4 z-10 ks-card p-2.5 rounded-xl text-xs space-y-1 shadow-2xl border border-orange-900/40">
+                <span class="font-semibold text-orange-400 block text-[10px] uppercase tracking-wider">Terracotta Overlay Legend</span>
+                <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-slate-300">
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block"></span> Rock &amp; Cave</div>
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Temple &amp; Wall</div>
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block"></span> Miniatures</div>
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Folk &amp; Tribal</div>
+                    <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block"></span> Modern Masters</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Side Panel: Quick Facts Dossier (400px) -->
+        <aside class="w-96 md:w-100 border-l border-orange-950/60 bg-[#0e0a12] flex flex-col shrink-0 z-20 overflow-y-auto justify-center" id="dossier-panel">
+            
+            <!-- Placeholder Initial State -->
+            <div class="p-6 h-full flex flex-col items-center justify-center text-center my-auto space-y-4 text-orange-200/60">
+                <div class="w-16 h-16 rounded-2xl bg-orange-950/40 border border-orange-500/30 flex items-center justify-center text-orange-400 text-2xl shadow-inner">
+                    <i class="fa-solid fa-hand-pointer animate-bounce"></i>
+                </div>
+                <div>
+                    <h3 class="font-serif-header text-lg font-normal text-slate-200 mb-1">Select a Masterpiece</h3>
+                    <p class="text-xs text-orange-200/60 max-w-xs leading-relaxed">
+                        Click any interactive pin on the map, state filter, or card from the left index to inspect quick facts &amp; specifications.
+                    </p>
+                </div>
+                <div class="pt-4 flex items-center gap-2 text-[10px] text-orange-400 font-mono">
+                    <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                    21 Masterpieces Across 14 States Ready
+                </div>
+            </div>
+
+        </aside>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Dataset of 21 Authentic Indian Art Masterpieces across 14 States
+        const MASTERPIECES = [
+            {
+                id: "raja_ravi_varma",
+                num: "01",
+                title: "Raja Ravi Varma Court Paintings",
+                plateNo: "ENTRY 01 / 21",
+                state: "Kerala",
+                lat: 8.8141,
+                lng: 76.8122,
+                era: "c. 19th c. CE (1848–1906)",
+                eraTag: "modern",
+                category: "modern",
+                catColor: "#a855f7",
+                localImg: "images/raja_ravi_varma.jpg",
+                summary: "Masterworks blending European academic oil realism with Indian mythological themes, bringing sacred art into millions of homes via chromolithographs.",
+                period: "Travancore Royal Court & Modernism",
+                patrons: "Gaekwad of Baroda & Travancore Royalty",
+                surface: "Woven oil canvas & lithographic stones",
+                colour: "Oil paints, crushed mineral pigments, gold dust",
+                funFact: "Raja Ravi Varma established India's first chromolithographic printing press in Ghatkopar in 1894, making high art accessible to common people!"
+            },
+            {
+                id: "mewar_mahabharata",
+                num: "02",
+                title: "Mewar Mahabharata Miniatures",
+                plateNo: "ENTRY 02 / 21",
+                state: "Rajasthan",
+                lat: 24.5854,
+                lng: 73.7125,
+                era: "c. 17th c. CE (1650s)",
+                eraTag: "imperial",
+                category: "miniature",
+                catColor: "#0284c7",
+                localImg: "images/mewar_mahabharata.jpg",
+                summary: "Vibrant Rajasthani court miniatures by master painter Sahibdin, featuring rich saffron skies, intense red borders, and elaborate epic storytelling.",
+                period: "Mewar Kingdom (Rana Jagat Singh I)",
+                patrons: "Mewar Sisodia Rajputs",
+                surface: "Layered handmade Wasli manuscript paper",
+                colour: "Crushed cinnabar, lapis lazuli, gold leaf, beetle wings",
+                funFact: "Court painter Sahibdin produced thousands of epic folios, individually numbering scenes like an early storyboard!"
+            },
+            {
+                id: "jamini_roy",
+                num: "03",
+                title: "Jamini Roy Folk Modernism",
+                plateNo: "ENTRY 03 / 21",
+                state: "West Bengal",
+                lat: 23.1500,
+                lng: 87.0667,
+                era: "c. 20th c. CE (1887–1972)",
+                eraTag: "modern",
+                category: "modern",
+                catColor: "#a855f7",
+                localImg: "images/jamini_roy.jpg",
+                summary: "Bold modernist paintings inspired by Bengali Kalighat scroll art and Santhal tribal motifs, featuring sweeping brush outlines and flat earth colors.",
+                period: "Post-Impressionist Modernism",
+                patrons: "Independent Art Collectives",
+                surface: "Woven cloth, cardboard, handmade matting",
+                colour: "Organic earth colors, tamarind glue, lampblack outlines",
+                funFact: "Roy rejected expensive Western oil paints, grinding his own paints from local river mud, tamarind seeds, and chalk!"
+            },
+            {
+                id: "bhimbetka",
+                num: "04",
+                title: "Bhimbetka Prehistoric Rock Art",
+                plateNo: "ENTRY 04 / 21",
+                state: "Madhya Pradesh",
+                lat: 22.9378,
+                lng: 77.6125,
+                era: "c. 8000 BCE – 1000 BCE",
+                eraTag: "prehistoric",
+                category: "rock",
+                catColor: "#f97316",
+                localImg: "images/bhimbetka.jpg",
+                summary: "UNESCO World Heritage rock shelters featuring prehistoric ochre hand-prints, bison hunts, ritual dances, and animal figures spanning 10,000 years.",
+                period: "Mesolithic to Chalcolithic Eras",
+                patrons: "Indigenous Hunter-Gatherer Tribes",
+                surface: "Sandstone rock shelter cave ceilings & walls",
+                colour: "Red haematite, manganese oxide, animal fat, plant sap",
+                funFact: "The natural mineral pigments bonded so deeply into the porous sandstone that paintings survived weather exposure for 10,000 years!"
+            },
+            {
+                id: "ajanta",
+                num: "05",
+                title: "Ajanta Caves",
+                plateNo: "ENTRY 05 / 21",
+                state: "Maharashtra",
+                lat: 20.5519,
+                lng: 75.7033,
+                era: "c. 2nd c. BCE – 5th c. CE",
+                eraTag: "ancient",
+                category: "rock",
+                catColor: "#f97316",
+                localImg: "images/ajanta.jpg",
+                summary: "Ancient rock-cut Buddhist sanctuaries containing masterworks of classical Indian mural painting, notably the iconic Padmapani Bodhisattva.",
+                period: "Satavahana & Vakataka Dynasties",
+                patrons: "King Harishena & Monastic Guilds",
+                surface: "Rock-cut basalt cave walls & mud plaster",
+                colour: "Natural earth minerals, lapis lazuli, yellow ochre, lampblack",
+                funFact: "Lost to the world for over 1,000 years until a British hunting party led by John Smith stumbled upon Cave 10 while chasing a tiger in 1819!"
+            },
+            {
+                id: "khajuraho",
+                num: "06",
+                title: "Khajuraho Temple Sculptures",
+                plateNo: "ENTRY 06 / 21",
+                state: "Madhya Pradesh",
+                lat: 24.8318,
+                lng: 79.9199,
+                era: "c. 950 – 1050 CE",
+                eraTag: "classical",
+                category: "temple",
+                catColor: "#e11d48",
+                localImg: "images/khajuraho.jpg",
+                summary: "Masterpieces of Nagara architectural sculpture celebrating divine love, court musicians, celestial maidens (Surasundaris), and spiritual harmony.",
+                period: "Chandela Dynasty",
+                patrons: "Chandela Rajput Kings",
+                surface: "Fine-grained buff sandstone masonry",
+                colour: "High-relief stone carving, mortise-and-tenon joinery",
+                funFact: "Only 25 of the original 85 majestic temples survived the ravages of time, preserved inside dense date palm forests!"
+            },
+            {
+                id: "mahabalipuram",
+                num: "07",
+                title: "Mahabalipuram Monoliths",
+                plateNo: "ENTRY 07 / 21",
+                state: "Tamil Nadu",
+                lat: 12.6269,
+                lng: 80.1927,
+                era: "c. 7th – 8th c. CE",
+                eraTag: "ancient",
+                category: "temple",
+                catColor: "#e11d48",
+                localImg: "images/mahabalipuram.jpg",
+                summary: "Monumental Dravidian monoliths and open-air bas-reliefs, including the famous 'Descent of the Ganges' carved across two massive granite boulders.",
+                period: "Pallava Dynasty",
+                patrons: "Narasimhavarman I (Mamalla)",
+                surface: "Solid pink granite boulders & shoreline bedrock",
+                colour: "Direct stone relief carving & structural granite blocks",
+                funFact: "The relief uses a natural fissure between two massive boulders to represent the flowing holy river Ganges descended from heaven!"
+            },
+            {
+                id: "tanjore",
+                num: "08",
+                title: "Thanjavur Gold Paintings",
+                plateNo: "ENTRY 08 / 21",
+                state: "Tamil Nadu",
+                lat: 10.7870,
+                lng: 79.1378,
+                era: "c. 16th – 18th c. CE",
+                eraTag: "imperial",
+                category: "temple",
+                catColor: "#e11d48",
+                localImg: "images/tanjore.jpg",
+                summary: "Renowned for three-dimensional gesso relief work embedded with pure 22-karat gold leaf foil and precious gemstones depicting Hindu deities.",
+                period: "Thanjavur Nayaka & Maratha Era",
+                patrons: "Raja Serfoji II & Royal Ateliers",
+                surface: "Teakwood panel coated with unrefined gesso plaster",
+                colour: "22k gold leaf foil, semi-precious gems, natural vegetable dyes",
+                funFact: "The 22k gold foil used in authentic Tanjore paintings never tarnishes or loses its radiance even after 200 years!"
+            },
+            {
+                id: "madhubani",
+                num: "09",
+                title: "Madhubani (Mithila) Folk Art",
+                plateNo: "ENTRY 09 / 21",
+                state: "Bihar",
+                lat: 26.3533,
+                lng: 86.0718,
+                era: "c. 800 BCE – Present",
+                eraTag: "prehistoric",
+                category: "folk",
+                catColor: "#10b981",
+                localImg: "images/madhubani.jpg",
+                summary: "Intricate folk art featuring double lines, geometric patterns, flora, and mythological motifs drawn traditionally using twigs and rice paste.",
+                period: "Ancient Mithila Realm to Present",
+                patrons: "Mithila Women Collective",
+                surface: "Freshly plastered mud walls, handmade paper, canvas",
+                colour: "Rice powder paste, soot, cow dung, neem leaves, turmeric",
+                funFact: "According to legend, King Janaka commissioned local women to decorate the entire town of Mithila for the wedding of Lord Rama and Sita!"
+            },
+            {
+                id: "pattachitra",
+                num: "10",
+                title: "Pattachitra Scroll Art",
+                plateNo: "ENTRY 10 / 21",
+                state: "Odisha",
+                lat: 19.8049,
+                lng: 85.8178,
+                era: "c. 12th c. CE – Present",
+                eraTag: "classical",
+                category: "folk",
+                catColor: "#10b981",
+                localImg: "images/pattachitra.jpg",
+                summary: "Vibrant cloth-based scroll paintings narrating stories of Lord Jagannath and Krishna epics, bounded by heavy floral borders.",
+                period: "Eastern Ganga Dynasty to Present",
+                patrons: "Jagannath Temple Culture",
+                surface: "Patta (cotton cloth seasoned with tamarind paste & chalk)",
+                colour: "Conch shell white, lampblack, yellow orpiment, red lead",
+                funFact: "Artists polish the cloth canvas using smooth river stones until it gains a glass-like shine before drawing a single line!"
+            },
+            {
+                id: "kangra",
+                num: "11",
+                title: "Kangra Pahari Miniatures",
+                plateNo: "ENTRY 11 / 21",
+                state: "Himachal Pradesh",
+                lat: 32.1008,
+                lng: 76.2691,
+                era: "c. 18th c. CE",
+                eraTag: "imperial",
+                category: "miniature",
+                catColor: "#0284c7",
+                localImg: "images/kangra.jpg",
+                summary: "Delicate Pahari miniature paintings known for lyrical lines, lush natural green landscapes, and poetic romantic themes from Gita Govinda.",
+                period: "Late 18th Century CE",
+                patrons: "Raja Sansar Chand of Kangra",
+                surface: "Handcrafted Wasli paper (layered handmade sheets)",
+                colour: "Crushed lapis lazuli, vermilion, pearl dust, natural tree gum",
+                funFact: "The ultra-fine detail brushes were handmade using a single hair taken gently from a baby squirrel's tail!"
+            },
+            {
+                id: "bani_thani",
+                num: "12",
+                title: "Bani Thani (Kishangarh)",
+                plateNo: "ENTRY 12 / 21",
+                state: "Rajasthan",
+                lat: 26.5724,
+                lng: 74.8643,
+                era: "c. 1750 CE",
+                eraTag: "imperial",
+                category: "miniature",
+                catColor: "#0284c7",
+                localImg: "images/bani_thani.jpg",
+                summary: "Celebrated worldwide as the Mona Lisa of India, depicting an idealized maiden with arched eyebrows, elongated lotus eyes, and thin veil.",
+                period: "Mid-18th Century Rajput Era",
+                patrons: "Raja Savant Singh & Painter Nihāl Chand",
+                surface: "Handmade Wasli manuscript paper",
+                colour: "Opaque tempera, liquid gold leaf, natural mineral pigments",
+                funFact: "Bani Thani was a real court poetess and singer named Vishnupriya who captivated the king with her devotional poetry!"
+            },
+            {
+                id: "mughal",
+                num: "13",
+                title: "Imperial Mughal Atelier",
+                plateNo: "ENTRY 13 / 21",
+                state: "Uttar Pradesh",
+                lat: 27.1767,
+                lng: 78.0081,
+                era: "c. 16th – 17th c. CE",
+                eraTag: "imperial",
+                category: "miniature",
+                catColor: "#0284c7",
+                localImg: "images/mughal_falcon.jpg",
+                summary: "Exquisite court miniatures blending Persian decorative elegance, Indian naturalism, and European aerial perspective.",
+                period: "Mughal Empire (Akbar to Shah Jahan)",
+                patrons: "Emperors Akbar, Jahangir, Shah Jahan",
+                surface: "Burnished Wasli paper, vellum",
+                colour: "Finely ground minerals, gold leaf, agate stone polish",
+                funFact: "Master painter Ustad Mansur painted the world’s first accurate color illustration of the now-extinct Dodo bird!"
+            },
+            {
+                id: "bengal",
+                num: "14",
+                title: "Bengal School (Bharat Mata)",
+                plateNo: "ENTRY 14 / 21",
+                state: "West Bengal",
+                lat: 22.5726,
+                lng: 88.3639,
+                era: "c. 1905 CE",
+                eraTag: "modern",
+                category: "modern",
+                catColor: "#a855f7",
+                localImg: "images/bharat_mata.jpg",
+                summary: "A pioneering nationalist artwork depicting India as a four-armed ascetic goddess holding the Vedas, paddy, japa beads, and white cloth.",
+                period: "Swadeshi Movement (1905)",
+                patrons: "Abanindranath Tagore & Oriental Art Society",
+                surface: "Cartridge paper, silk canvas",
+                colour: "Japanese wash technique, soft watercolor, ink",
+                funFact: "Painted during the height of the 1905 Swadeshi anti-colonial movement as an iconic visual symbol of spiritual self-reliance!"
+            },
+            {
+                id: "raza",
+                num: "15",
+                title: "Progressive Artists' Group (Raza)",
+                plateNo: "ENTRY 15 / 21",
+                state: "Maharashtra",
+                lat: 18.9220,
+                lng: 72.8347,
+                era: "c. 1947 – 1980s CE",
+                eraTag: "modern",
+                category: "modern",
+                catColor: "#a855f7",
+                localImg: "images/raza_bindu.jpg",
+                summary: "Post-independence modernism fusing Western avant-garde abstraction with Indian metaphysical symbolism, centered on the cosmic 'Bindu'.",
+                period: "Modernist Era (Post-1947)",
+                patrons: "S.H. Raza, M.F. Husain, F.N. Souza",
+                surface: "Heavy woven canvas",
+                colour: "Acrylic on canvas, oil pigments",
+                funFact: "S.H. Raza traced his fascination with the Bindu to a primary school teacher who drew a black dot on the wall to focus his wandering attention!"
+            },
+            {
+                id: "warli",
+                num: "16",
+                title: "Warli Tribal Murals",
+                plateNo: "ENTRY 16 / 21",
+                state: "Maharashtra",
+                lat: 19.9975,
+                lng: 72.8331,
+                era: "c. 2500 BCE – Present",
+                eraTag: "prehistoric",
+                category: "folk",
+                catColor: "#10b981",
+                localImg: "images/warli.jpg",
+                summary: "Ancient agrarian tribal wall paintings using basic geometric vocabulary—circles for sun/moon, triangles for trees, squares for sacred enclosures.",
+                period: "Prehistoric Origins to Present",
+                patrons: "Warli Indigenous Community",
+                surface: "Mud, cow dung, and red ochre (Gera) house walls",
+                colour: "White rice paste mixed with water & gum, chewed bamboo stick",
+                funFact: "Warli paintings contain no straight lines; everything is built from rhythmic interlocking triangles representing human harmony with nature!"
+            },
+            {
+                id: "gond",
+                num: "17",
+                title: "Gond Tribal Art",
+                plateNo: "ENTRY 17 / 21",
+                state: "Madhya Pradesh",
+                lat: 22.9734,
+                lng: 78.6569,
+                era: "c. 1400 CE – Present",
+                eraTag: "classical",
+                category: "folk",
+                catColor: "#10b981",
+                localImg: "images/gond.jpg",
+                summary: "Vibrant tribal art characterized by intricate filler patterns (dots, dashes, lines) depicting sacred trees, animals, and ancestral folklore.",
+                period: "14th Century CE to Present",
+                patrons: "Gond Pardhan Artists",
+                surface: "Adobe mud walls, handmade canvas, paper",
+                colour: "Plant sap, charcoal, colored clay, acrylics",
+                funFact: "In Gond culture, viewing pleasing art brings good fortune. Every artist develops a signature dot-and-dash pattern that acts as their visual signature!"
+            },
+            {
+                id: "cheriyal",
+                num: "18",
+                title: "Cheriyal Scroll Painting",
+                plateNo: "ENTRY 18 / 21",
+                state: "Telangana",
+                lat: 17.8016,
+                lng: 79.0064,
+                era: "c. 15th c. CE – Present",
+                eraTag: "imperial",
+                category: "folk",
+                catColor: "#10b981",
+                localImg: "images/cheriyal.jpg",
+                summary: "Traditional narrative scroll paintings up to 40 feet long used by travelling bards as visual aids while singing village epics.",
+                period: "15th Century Kakatiya Heritage",
+                patrons: "Kaki Padagollu Storyteller Bards",
+                surface: "Khadi cloth canvas coated with tamarind seed paste & white mud",
+                colour: "Crushed mineral stones, natural tree resin, squirrel-hair brushes",
+                funFact: "The scroll format resembles an ancient film strip, divided into sequential horizontal story panels separated by vivid floral borders!"
+            },
+            {
+                id: "kalamkari",
+                num: "19",
+                title: "Kalamkari Textile Art",
+                plateNo: "ENTRY 19 / 21",
+                state: "Andhra Pradesh",
+                lat: 13.7498,
+                lng: 79.6984,
+                era: "c. 10th c. CE – Present",
+                eraTag: "classical",
+                category: "temple",
+                catColor: "#e11d48",
+                localImg: "images/kalamkari.jpg",
+                summary: "Freehand pen-drawn textile art depicting temple hangings and epic lore using a bamboo nib (Kalam) dipped in organic vegetable dyes.",
+                period: "Chola & Vijayanagara Era",
+                patrons: "Srikalahasti Temple Ateliers",
+                surface: "Unbleached cotton cloth treated with myrobalan milk",
+                colour: "Fermented iron rust, jaggery, alum, indigo, madder root",
+                funFact: "Creating a single Kalamkari piece requires 23 painstaking steps of washing, milk-bleaching, pen-drawing, and river-water dyeing!"
+            },
+            {
+                id: "pithora",
+                num: "20",
+                title: "Pithora Sacred Murals",
+                plateNo: "ENTRY 20 / 21",
+                state: "Gujarat",
+                lat: 22.3072,
+                lng: 73.6000,
+                era: "c. 1000 BCE – Present",
+                eraTag: "prehistoric",
+                category: "folk",
+                catColor: "#10b981",
+                localImg: "images/pithora.jpg",
+                summary: "Ritualistic wall paintings executed by male painters (Lakharas) during vow fulfilment ceremonies to invoke the warrior deity Baba Pithora.",
+                period: "Rathwa Tribal Tradition",
+                patrons: "Rathwa & Bhil Tribal Shaman Guilds",
+                surface: "Three layers of mud-and-cow dung wall plaster",
+                colour: "Pigment powders mixed with milk, Mahua liquor & egg yolk",
+                funFact: "The painting process is accompanied by continuous chanting, drumming, and dancing by village shamans (Badvas) to consecrate the wall!"
+            },
+            {
+                id: "hampi",
+                num: "21",
+                title: "Hampi Vijayanagara Reliefs",
+                plateNo: "ENTRY 21 / 21",
+                state: "Karnataka",
+                lat: 15.3350,
+                lng: 76.4600,
+                era: "c. 14th – 16th c. CE",
+                eraTag: "imperial",
+                category: "temple",
+                catColor: "#e11d48",
+                localImg: "images/hampi.jpg",
+                summary: "Grand granite architectural reliefs and ceiling frescoes depicting dancers, royal processions, and Ramayana battle scenes.",
+                period: "Vijayanagara Empire (1336–1565 CE)",
+                patrons: "Emperors Harihara, Bukka & Krishnadevaraya",
+                surface: "Granite stone relief panels & Virupaksha ceiling plaster",
+                colour: "High-relief granite carving, natural lime frescoes",
+                funFact: "The 56 stone pillars in Hampi's Vittala Temple are carved out of single granite blocks and resonate with musical notes when tapped!"
+            }
+        ];
+
+        // Global State Variables
+        let map, mapMarkers = {};
+        let activeItem = null;
+        let currentCategory = 'all';
+        let currentEra = 'all';
+        let isAudioPlaying = false;
+
+        // Initialize App on DOM Loaded
+        window.onload = () => {
+            initLeafletMap();
+            renderSiteList();
+        };
+
+        // 1. Initialize Dark Leaflet OpenStreetMap
+        function initLeafletMap() {
+            map = L.map('leaflet-map', {
+                center: [21.7679, 78.8718],
+                zoom: 5,
+                minZoom: 4,
+                maxZoom: 10,
+                zoomControl: true
+            });
+
+            // OpenStreetMap Tile Layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            renderMapPins();
+        }
+
+        // 2. Render Pin Markers on Map
+        function renderMapPins() {
+            // Remove existing markers
+            Object.values(mapMarkers).forEach(m => map.removeLayer(m));
+            mapMarkers = {};
+
+            let visibleCount = 0;
+
+            MASTERPIECES.forEach(item => {
+                if (!matchesFilters(item)) return;
+                visibleCount++;
+
+                const customHtml = `
+                    <div class="relative group cursor-pointer flex items-center justify-center">
+                        <div class="w-6 h-6 rounded-full opacity-45 animate-ping absolute" style="background-color: ${item.catColor};"></div>
+                        <div class="w-5.5 h-5.5 rounded-full border-2 border-[#0b090e] shadow-2xl flex items-center justify-center text-slate-950 text-[9px] font-bold transition-transform group-hover:scale-125" style="background-color: ${item.catColor};">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                    </div>
+                `;
+
+                const icon = L.divIcon({
+                    html: customHtml,
+                    className: 'custom-marker-dot',
+                    iconSize: [22, 22],
+                    iconAnchor: [11, 11]
+                });
+
+                const m = L.marker([item.lat, item.lng], { icon }).addTo(map);
+
+                const popupContent = `
+                    <div class="p-2 space-y-1 max-w-[210px]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[9px] font-mono text-orange-400 bg-orange-950/80 px-1.5 py-0.5 rounded border border-orange-500/40">${item.plateNo}</span>
+                            <span class="text-[9px] text-slate-300 font-medium">${item.state}</span>
+                        </div>
+                        <h4 class="font-bold text-xs text-slate-100 leading-tight mt-1">${item.title}</h4>
+                        <p class="text-[10px] text-orange-200/60 font-mono">${item.era}</p>
+                        <button onclick="window.selectById('${item.id}')" class="w-full mt-2 py-1.5 px-2 bg-gradient-to-r from-orange-600 to-amber-600 text-slate-950 text-[10px] font-bold rounded shadow transition-all hover:brightness-110 flex items-center justify-center gap-1 cursor-pointer">
+                            <i class="fa-solid fa-magnifying-glass"></i> View Dossier &amp; Specs
+                        </button>
+                    </div>
+                `;
+
+                m.bindPopup(popupContent);
+                m.on('click', () => selectMasterpiece(item));
+
+                mapMarkers[item.id] = m;
+            });
+
+            document.getElementById('count-visible').textContent = visibleCount;
+        }
+
+        // Global Popup Helper
+        window.selectById = (id) => {
+            const item = MASTERPIECES.find(x => x.id === id);
+            if (item) selectMasterpiece(item);
+        };
+
+        // 3. Render Left Location List
+        function renderSiteList() {
+            const container = document.getElementById('site-list-container');
+            container.innerHTML = '';
+
+            MASTERPIECES.forEach(item => {
+                if (!matchesFilters(item)) return;
+
+                const card = document.createElement('div');
+                card.id = `card-item-${item.id}`;
+                const isActive = activeItem && activeItem.id === item.id;
+                card.className = `ks-card ks-card-hover rounded-xl p-2.5 flex items-center gap-3 cursor-pointer border ${isActive ? 'active-site-item' : ''}`;
+                card.onclick = () => selectMasterpiece(item);
+
+                card.innerHTML = `
+                    <div class="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-[#070509] border border-orange-900/30 relative">
+                        <img src="${item.localImg}" alt="${item.title}" class="w-full h-full object-cover">
+                        <span class="absolute top-0.5 left-0.5 bg-[#08060a]/90 text-[8px] font-mono text-orange-400 px-1 py-0.2 rounded border border-orange-500/30">${item.num}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="font-mono text-orange-400">${item.plateNo}</span>
+                            <span class="text-orange-200/60 font-medium">${item.state}</span>
+                        </div>
+                        <h3 class="font-semibold text-xs text-slate-200 truncate leading-snug">${item.title}</h3>
+                        <span class="text-[10px] text-orange-200/50 block truncate font-mono">${item.era}</span>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // 4. Select Masterpiece Action (Updates Map & Quick Facts Dossier)
+        function selectMasterpiece(item) {
+            activeItem = item;
+
+            // Fly map to item coordinates
+            map.flyTo([item.lat, item.lng], 7, { duration: 1.2 });
+
+            // Open marker popup
+            if (mapMarkers[item.id]) {
+                mapMarkers[item.id].openPopup();
+            }
+
+            // Render Right Side Dossier Panel
+            const panel = document.getElementById('dossier-panel');
+            panel.className = "w-96 md:w-100 border-l border-orange-950/60 bg-[#0e0a12] flex flex-col shrink-0 z-20 overflow-y-auto";
+            panel.innerHTML = `
+                <div class="p-4 space-y-3.5">
+                    
+                    <!-- Archival Plate Header -->
+                    <div class="flex items-center justify-between text-xs pb-2 border-b border-orange-950/50">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase bg-orange-950/60 text-orange-300 border border-orange-500/40">
+                            ${item.plateNo}
+                        </span>
+                        <span class="text-[10px] font-mono text-orange-200/50">${item.lat.toFixed(2)}°N, ${item.lng.toFixed(2)}°E</span>
+                    </div>
+
+                    <!-- Artwork High-Res Display Stage -->
+                    <div class="h-56 rounded-xl overflow-hidden bg-[#070509] border border-orange-900/30 relative group">
+                        <img src="${item.localImg}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0e0a12] via-transparent to-transparent opacity-85"></div>
+                        <div class="absolute bottom-2 left-3 right-3 text-xs">
+                            <span class="text-orange-400 font-semibold block text-[11px]"><i class="fa-solid fa-location-dot" style="color:${item.catColor};"></i> ${item.state}, India</span>
+                            <h2 class="font-serif-header text-xl font-normal text-slate-100 leading-tight">${item.title}</h2>
+                        </div>
+                    </div>
+
+                    <!-- Brief Overview -->
+                    <p class="text-xs text-slate-300 leading-relaxed bg-[#150f1c] p-3 rounded-lg border border-orange-900/30">
+                        ${item.summary}
+                    </p>
+
+                    <!-- Quick Specifications Grid -->
+                    <div class="space-y-2 pt-1">
+                        <span class="text-[10px] font-semibold text-orange-300/60 uppercase tracking-wider block">Specifications &amp; Quick Facts</span>
+                        
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="bg-[#150f1c] p-2.5 rounded-lg border border-orange-900/30">
+                                <span class="text-[10px] text-orange-300/60 font-medium block flex items-center gap-1"><i class="fa-solid fa-calendar text-orange-400"></i> Era / Period</span>
+                                <span class="font-semibold text-slate-200 text-xs block mt-0.5">${item.era}</span>
+                            </div>
+                            <div class="bg-[#150f1c] p-2.5 rounded-lg border border-orange-900/30">
+                                <span class="text-[10px] text-orange-300/60 font-medium block flex items-center gap-1"><i class="fa-solid fa-crown text-orange-400"></i> Patron / Dynasty</span>
+                                <span class="font-semibold text-slate-200 text-xs block mt-0.5">${item.patrons}</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#150f1c] p-2.5 rounded-lg border border-orange-900/30 text-xs">
+                            <span class="text-[10px] text-orange-300/60 font-medium block flex items-center gap-1"><i class="fa-solid fa-layer-group text-orange-400"></i> Surface &amp; Canvas</span>
+                            <span class="text-slate-200 text-xs block mt-0.5">${item.surface}</span>
+                        </div>
+
+                        <div class="bg-[#150f1c] p-2.5 rounded-lg border border-orange-900/30 text-xs">
+                            <span class="text-[10px] text-orange-300/60 font-medium block flex items-center gap-1"><i class="fa-solid fa-palette text-orange-400"></i> Medium &amp; Pigments</span>
+                            <span class="text-slate-200 text-xs block mt-0.5">${item.colour}</span>
+                        </div>
+
+                        <!-- Fun Fact Spotlight Card -->
+                        <div class="bg-orange-950/40 border border-orange-500/40 p-3 rounded-lg text-xs space-y-1">
+                            <span class="font-bold text-orange-400 uppercase text-[10px] flex items-center gap-1.5"><i class="fa-solid fa-lightbulb"></i> 💡 Fun Fact Spotlight</span>
+                            <p class="text-orange-200/90 text-[11px] leading-relaxed">
+                                ${item.funFact}
+                            </p>
+                        </div>
+
+                        <!-- Speech Audio Guide Action -->
+                        <button onclick="playDossierAudio()" id="btn-audio-guide" class="w-full mt-2 py-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-lg shadow-lg flex items-center justify-center gap-2 transition-all cursor-pointer">
+                            <i class="fa-solid fa-volume-high"></i> Listen to Audio Guide
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Highlight active card item
+            document.querySelectorAll('.active-site-item').forEach(el => el.classList.remove('active-site-item'));
+            const listItem = document.getElementById(`card-item-${item.id}`);
+            if (listItem) {
+                listItem.classList.add('active-site-item');
+                listItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // Stop speech synthesis if playing
+            if (isAudioPlaying && ('speechSynthesis' in window)) {
+                window.speechSynthesis.cancel();
+                isAudioPlaying = false;
+            }
+        }
+
+        // 5. Category Filtering
+        function setCategory(cat, ev) {
+            currentCategory = cat;
+
+            document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active-chip'));
+            ev.target.classList.add('active-chip');
+
+            applyFilters();
+        }
+
+        // 6. Vertical Era Chrono-Rail Filtering
+        function setEraFilter(era, ev) {
+            currentEra = era;
+
+            document.querySelectorAll('.era-step-btn').forEach(b => b.classList.remove('active-era'));
+            ev.target.classList.add('active-era');
+
+            const eraLabels = {
+                'all': 'All Eras',
+                'prehistoric': 'Prehistoric (8000 BCE)',
+                'ancient': 'Ancient Caves (2nd BCE)',
+                'classical': 'Classical (10th CE)',
+                'imperial': 'Imperial Peak (16th CE)',
+                'modern': 'Modern Masters (1900 CE)'
+            };
+            document.getElementById('active-era-lbl').textContent = eraLabels[era] || 'Filtered Era';
+
+            applyFilters();
+        }
+
+        // 7. Filter Evaluation
+        function applyFilters() {
+            renderMapPins();
+            renderSiteList();
+        }
+
+        function matchesFilters(item) {
+            if (currentCategory !== 'all' && item.category !== currentCategory) return false;
+            if (currentEra !== 'all' && item.eraTag !== currentEra) return false;
+
+            const stateSelect = document.getElementById('state-index-select').value;
+            if (stateSelect !== 'all' && item.state !== stateSelect) return false;
+
+            const q = document.getElementById('ks-search').value.trim().toLowerCase();
+            if (q !== '') {
+                const text = `${item.title} ${item.state} ${item.era} ${item.summary} ${item.surface} ${item.colour} ${item.patrons} ${item.funFact}`.toLowerCase();
+                if (!text.includes(q)) return false;
+            }
+
+            return true;
+        }
+
+        // 8. Reset All Filters
+        function resetAllFilters() {
+            currentCategory = 'all';
+            currentEra = 'all';
+            document.getElementById('ks-search').value = '';
+            document.getElementById('state-index-select').value = 'all';
+
+            document.querySelectorAll('.chip-btn').forEach(b => b.classList.remove('active-chip'));
+            document.querySelectorAll('.chip-btn')[0].classList.add('active-chip');
+
+            document.querySelectorAll('.era-step-btn').forEach(b => b.classList.remove('active-era'));
+            document.querySelectorAll('.era-step-btn')[0].classList.add('active-era');
+            document.getElementById('active-era-lbl').textContent = 'All Eras';
+
+            applyFilters();
+        }
+
+        // 9. Speech Audio Guide
+        function playDossierAudio() {
+            if (!activeItem) return;
+            if (!('speechSynthesis' in window)) {
+                alert('Speech synthesis is not supported on this browser.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-audio-guide');
+
+            if (isAudioPlaying) {
+                window.speechSynthesis.cancel();
+                isAudioPlaying = false;
+                if (btn) btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen to Audio Guide`;
+                return;
+            }
+
+            const text = `Inspecting ${activeItem.title}, entry number ${activeItem.num}, located in ${activeItem.state}. Era: ${activeItem.era}. ${activeItem.summary}. Did you know? ${activeItem.funFact}`;
+
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = 0.92;
+            u.pitch = 1.0;
+
+            u.onstart = () => {
+                isAudioPlaying = true;
+                if (btn) btn.innerHTML = `<i class="fa-solid fa-circle-stop text-amber-400"></i> Playing Audio... (Click to Stop)`;
+            };
+
+            u.onend = () => {
+                isAudioPlaying = false;
+                if (btn) btn.innerHTML = `<i class="fa-solid fa-volume-high"></i> Listen to Audio Guide`;
+            };
+
+            window.speechSynthesis.speak(u);
+        }
+    </script>
+</body>
+</html>
